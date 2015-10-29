@@ -55,12 +55,12 @@ usemathjax: no
     *  如果清单文件没有更新，则什么也不做
     *  只有所有需要离线的资源都获取成功，才会真正生成离线缓存
 
-[slide data-transition="newspaper"]
+[slide data-transition="newspaper" data-incallback="removeImage"]
 # 清单文件如何更新
 #### 更改manifest文件中的任何一个字符，都会被认为清单进行了更新<br /><br /><br />
 <img src="/images/update.png"/>
 
-[slide data-incallback="putImage"]
+[slide data-incallback="putImage" data-outcallback="removeImage"]
 ## manifest说明
 ----
 * 第一行，必须是CACHE MANIFEST {:&.zoomIn}
@@ -83,14 +83,94 @@ function putImage() {
         position:'absolute'
     }).addClass('full_img').appendTo('body');
 }
+function removeImage() {
+    $('.full_img').remove();
+}
 </script>
+
+
+[slide data-incallback="removeImage"]
+
+## 坑
+----
+* 一旦应用了manifest特性，则该文档会被默认缓存，不需要写到manifest文件中 {:&.zoomIn}
+* 一旦资源加入了离线缓存，该资源内容变化，浏览器并不会重新获取该资源
+* 只有当manifest文件更新，浏览器才会重新离线缓存清单中的文件
+* 浏览器重新缓存了清单中的文件，并不会立即使用，会在下一次页面加载的时候生效
 
 
 [slide]
 
-## 坑
+## 清除缓存
 ----
-* 一旦应用了manifest特性，则该文档会被默认缓存，不需要写到manifest文件中
-* 一旦资源加入了离线缓存，该资源内容变化，浏览器并不会重新获取该资源
-* 只有当manifest文件更新，浏览器才会重新离线缓存清单中的文件
-* 浏览器重新缓存了清单中的文件，并不会立即使用，会在下一次页面加载的时候生效
+* 清除浏览器缓存
+* 在 <span class="yellow">chrome:appcache-internals</span> 中清除
+* 服务端返回404或410(下一次加载页面时生效)
+
+[slide]
+
+##离线缓存状态
+###存在于window.applicationCache对象上
+####通过window.applicationCache.status获取当前离线缓存状态
+<a style="font-size:16px;" href="http://www.w3.org/TR/2011/WD-html5-20110525/offline.html">http://www.w3.org/TR/2011/WD-html5-20110525/offline.html</a>
+---
+关键字 | 简要含义 | 值 | 含义
+:-------|:------:|-------:|--------
+UNCACHED|未缓存|0|表明一个应用缓存对象还没有完全初始化
+IDLE|空闲|1|应用缓存此时未处于更新过程中
+CHECKING|检查|2|清单已经获取完毕并检查更新
+DOWNLOADING|下载中|3|下载资源并准备加入到缓存中
+UPDATEREADY|更新就绪|4|一个新版本的应用缓存可以使用
+OBSOLETE|废弃|5|应用缓存现在被废弃(404或410)
+
+[slide data-transition="newspaper"]
+##JS离线事件监听
+----
+<pre><code class="javascript">
+function onUpdateReady() {
+  window.applicationCache.swapCache();
+  var sure = confirm('发现新版本，是否立即使用？');
+  sure && window.location.reload();
+}
+window.applicationCache.addEventListener('updateready', onUpdateReady);
+if(window.applicationCache.status === window.applicationCache.UPDATEREADY) {
+  onUpdateReady();
+}
+    </code></pre>
+
+[slide]
+
+##浏览器兼容性
+---
+###桌面版兼容性
+桌面版 | Chrome | Firefox | IE | Opera | Safari
+:-------|:------:|-------:|--------
+版本号|4.0|3.5|10.0|10.6|4.0
+<br />
+
+###手机版兼容性
+手机版 | Android | Firefox Mobile | IE Mobile | Opera Mobile | Safari Mobile
+:-------|:------:|-------:|--------
+版本号|2.1|?|未实现|11.0|3.2
+
+[slide]
+
+##相关资料
+----
+* https://developer.mozilla.org/zh-CN/docs/Web/HTML/Using_the_application_cache
+* http://www.html5rocks.com/en/tutorials/appcache/beginner/
+* http://www.w3.org/TR/2011/WD-html5-20110525/offline.html
+* http://diveintohtml5.info/offline.html
+* http://zhangsichu.com/html5/rocks/Slides/html5.html
+* http://caniuse.com/#search=manifest
+* http://html5demos.com/offlineapp
+
+[slide]
+
+#Question?
+----
+
+
+
+
+
